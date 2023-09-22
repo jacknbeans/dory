@@ -20,6 +20,10 @@ module Dory
       Dory::Config.settings[:dory][:nginx_proxy][:ssl_certs_dir]
     end
 
+    def self.docker_sock_file
+      Dory::Config.settings[:dory][:nginx_proxy][:docker_sock_file]
+    end
+
     def self.certs_arg
       if certs_dir && !certs_dir.empty?
         "-v #{certs_dir}:/etc/nginx/certs"
@@ -38,13 +42,21 @@ module Dory
       end
     end
 
+    def self.docker_sock_arg
+      if self.docker_sock_file && !File.exist?(self.docker_sock_file)
+        "/var/run/docker.sock"
+      else
+        self.docker_sock_file
+      end
+    end
+
     def self.http_port
       Dory::Config.settings[:dory][:nginx_proxy][:port]
     end
 
     def self.run_command
       "docker run -d -p #{http_port}:80 #{self.tls_arg} #{self.certs_arg} "\
-        "-v /var/run/docker.sock:/tmp/docker.sock -e " \
+        "-v #{self.docker_sock_arg}:/tmp/docker.sock -e " \
         "'CONTAINER_NAME=#{Shellwords.escape(self.container_name)}' --name " \
         "'#{Shellwords.escape(self.container_name)}' " \
         "#{Shellwords.escape(dory_http_proxy_image_name)}"

@@ -54,9 +54,10 @@ module Dory
             enabled: true
             container_name: dory_dinghy_http_proxy
             https_enabled: true
-            ssl_certs_dir: ''  # leave as empty string to use default certs
-            port: 80           # port 80 is default for http
-            tls_port: 443      # port 443 is default for https
+            ssl_certs_dir: ''                    # leave as empty string to use default certs
+            port: 80                             # port 80 is default for http
+            tls_port: 443                        # port 443 is default for https
+            docker_sock_file: '/var/run/docker.sock'  # location of docker.sock file (change for rootless Docker)
           resolv:
             enabled: true
             nameserver: 127.0.0.1
