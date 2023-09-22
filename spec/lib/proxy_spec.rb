@@ -188,4 +188,32 @@ RSpec.describe Dory::Proxy do
       end
     end
   end
+
+  context "docker_sock" do
+    let(:system_docker_sock_file) { "/var/run/docker.sock" }
+    let(:new_docker_sock_file) { "/run/user/1000/docker.sock" }
+
+    let(:patch_config_docker_sock_file) do
+      ->(docker_sock_file_path) do
+        new_config = YAML.load(Dory::Config.default_yaml)
+        new_config['dory']['nginx_proxy']['docker_sock_file'] = docker_sock_file_path
+        expect(new_config['dory']['nginx_proxy']['docker_sock_file']).to eq(docker_sock_file_path)
+        allow(Dory::Config).to receive(:default_yaml) { new_config.to_yaml }
+        expect(Dory::Config.settings[:dory][:nginx_proxy][:docker_sock_file]).to eq(docker_sock_file_path)
+      end
+    end
+
+    it "uses the default system path for docker.sock when config option is default" do
+      dy = YAML.load(Dory::Config.default_yaml)
+      expect(dy['dory']['nginx_proxy']['docker_sock_file']).to eq(system_docker_sock_file)
+      expect(Dory::Proxy.run_command).to match(/-v\s#{Regexp.escape(system_docker_sock_file)}..tmp.docker\.sock/)
+    end
+
+    it "uses the new path for docker.sock when config option is changed" do
+      patch_config_docker_sock_file.call(new_docker_sock_file)
+      dy = YAML.load(Dory::Config.default_yaml)
+      expect(dy['dory']['nginx_proxy']['docker_sock_file']).to eq(new_docker_sock_file)
+      expect(Dory::Proxy.run_command).to match(/-v\s#{Regexp.escape(new_docker_sock_file)}..tmp.docker\.sock/)
+    end
+  end
 end
